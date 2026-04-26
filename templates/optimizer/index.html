@@ -1,0 +1,640 @@
+{% extends 'optimizer/base.html' %}
+
+{% block title %}PromptForge — Optimize Your Prompts{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 3rem 0 2rem;
+    }
+
+    .hero-title {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin: 1rem 0;
+    }
+
+    .hero-title .highlight {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-sub {
+        color: var(--muted);
+        font-size: 1.05rem;
+        max-width: 550px;
+        margin: 0 auto 2rem;
+        line-height: 1.6;
+    }
+
+    .stats-bar {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+    }
+
+    .stat {
+        text-align: center;
+    }
+
+    .stat-num {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--accent);
+        font-family: var(--font-mono);
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .optimizer-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .optimizer-layout { grid-template-columns: 1fr; }
+        .hero-title { font-size: 2rem; }
+    }
+
+    .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255,255,255,0.02);
+    }
+
+    .panel-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+    }
+
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+
+    .panel-body { padding: 1.25rem; }
+
+    .input-area {
+        min-height: 200px;
+        font-size: 0.95rem;
+        line-height: 1.7;
+    }
+
+    .output-box {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        min-height: 200px;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        line-height: 1.8;
+        color: var(--text);
+        white-space: pre-wrap;
+        position: relative;
+    }
+
+    .output-placeholder {
+        color: var(--muted);
+        font-family: var(--font-display);
+        font-size: 0.875rem;
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .output-placeholder .icon {
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 0.75rem;
+        opacity: 0.4;
+    }
+
+    .action-bar {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .improvements-list {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .improvement-chip {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: #6ee7b7;
+        font-size: 0.72rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .api-config {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .api-config-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        cursor: pointer;
+    }
+
+    .api-config-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .api-config-body { display: none; }
+    .api-config-body.open { display: block; }
+
+    .api-note {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-top: 0.5rem;
+        font-family: var(--font-mono);
+    }
+
+    .ai-response-box {
+        background: var(--surface);
+        border: 1px solid rgba(0,229,255,0.2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .ai-response-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .ai-response-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+    }
+
+    .ai-response-content {
+        font-size: 0.9rem;
+        line-height: 1.8;
+        color: var(--text);
+        white-space: pre-wrap;
+    }
+
+    .copy-btn {
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 0.72rem;
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: var(--font-mono);
+        transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .explanation-box {
+        background: rgba(245, 158, 11, 0.05);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 8px;
+        padding: 0.875rem 1rem;
+        margin-top: 1rem;
+        font-size: 0.8rem;
+        color: #fbbf24;
+        font-family: var(--font-mono);
+        line-height: 1.6;
+    }
+
+    .loading-state {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 3rem 1rem;
+        color: var(--muted);
+        font-size: 0.875rem;
+    }
+
+    .loading-state .spinner {
+        border-color: rgba(0,229,255,0.2);
+        border-top-color: var(--accent);
+    }
+
+    .recent-history {
+        margin-top: 3rem;
+    }
+
+    .history-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .history-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: block;
+    }
+
+    .history-card:hover {
+        border-color: rgba(0,229,255,0.3);
+        transform: translateY(-2px);
+    }
+
+    .history-raw {
+        font-size: 0.875rem;
+        color: var(--text);
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .history-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.75rem;
+    }
+
+    .history-date {
+        font-size: 0.72rem;
+        color: var(--muted);
+        font-family: var(--font-mono);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="badge">AI PROMPT ENGINEERING</div>
+    <h1 class="hero-title">
+        Transform Your<br>
+        <span class="highlight">Prompts Into Power</span>
+    </h1>
+    <p class="hero-sub">
+        Raw prompts give mediocre results. PromptForge adds role, context, and structure to your questions — making AI give you <strong>10x better answers</strong>.
+    </p>
+    <div class="stats-bar">
+        <div class="stat">
+            <div class="stat-num">10x</div>
+            <div class="stat-label">Better Results</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">3s</div>
+            <div class="stat-label">Optimization</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">∞</div>
+            <div class="stat-label">Use Cases</div>
+        </div>
+    </div>
+</div>
+
+<!-- API Config -->
+<div class="api-config">
+    <div class="api-config-header" onclick="toggleApiConfig()">
+        <span class="api-config-title">
+            🔑 OpenAI API Configuration
+        </span>
+        <span id="api-toggle-icon" style="color:var(--muted); font-family:var(--font-mono); font-size:0.8rem;">▼ Expand</span>
+    </div>
+    <div class="api-config-body" id="api-config-body">
+        <input type="password" id="api-key-input" placeholder="sk-... (Enter your OpenAI API key for live AI responses)">
+        <p class="api-note">
+            ⚠ Key is stored only in memory (not saved). Without API key, local rule-based optimization is used.
+        </p>
+    </div>
+</div>
+
+<!-- Main Optimizer -->
+<div class="optimizer-layout">
+    <!-- Input Panel -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <span class="panel-dot dot-red"></span>
+                <span class="panel-dot dot-yellow"></span>
+                <span class="panel-dot dot-green"></span>
+                &nbsp; RAW PROMPT INPUT
+            </div>
+            <button class="copy-btn" onclick="clearInput()">✕ Clear</button>
+        </div>
+        <div class="panel-body">
+            <textarea class="input-area" id="raw-prompt" placeholder="Type your raw, simple question here...
+
+Examples:
+• tell me about python
+• how to lose weight
+• write an email
+• explain machine learning"></textarea>
+            <div class="action-bar">
+                <button class="btn btn-primary" id="optimize-btn" onclick="optimizePrompt()">
+                    ⚡ Optimize Prompt
+                </button>
+                <span style="font-size:0.75rem; color:var(--muted); font-family:var(--font-mono);">
+                    Ctrl+Enter to optimize
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Output Panel -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <span class="panel-dot dot-green"></span>
+                &nbsp; OPTIMIZED PROMPT
+            </div>
+            <div style="display:flex; gap:6px;">
+                <button class="copy-btn" id="copy-btn" onclick="copyOptimized()" style="display:none;">📋 Copy</button>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="output-box" id="output-box">
+                <div class="output-placeholder" id="output-placeholder">
+                    <span class="icon">✨</span>
+                    Your optimized prompt will appear here
+                </div>
+            </div>
+            <div id="meta-section" style="display:none;">
+                <div class="improvements-list" id="improvements-list"></div>
+                <div class="explanation-box" id="explanation-box"></div>
+            </div>
+            <div class="action-bar" id="response-action-bar" style="display:none;">
+                <button class="btn btn-primary" id="get-response-btn" onclick="getAiResponse()">
+                    🤖 Get AI Response
+                </button>
+                <span class="tag" id="category-tag"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Response -->
+<div class="ai-response-box fade-in" id="ai-response-section" style="display:none;">
+    <div class="ai-response-header">
+        <div class="ai-response-title">🤖 AI RESPONSE</div>
+        <button class="copy-btn" onclick="copyResponse()">📋 Copy Response</button>
+    </div>
+    <div class="ai-response-content" id="ai-response-content"></div>
+</div>
+
+<!-- Recent History -->
+{% if recent_history %}
+<div class="recent-history">
+    <div class="section-header">
+        <div class="section-title">⏱ Recent History</div>
+        <a href="/history/" style="font-size:0.8rem; color:var(--accent); text-decoration:none;">View All →</a>
+    </div>
+    <div class="history-grid">
+        {% for item in recent_history %}
+        <a href="/history/{{ item.pk }}/" class="history-card">
+            <div class="history-raw">{{ item.raw_prompt }}</div>
+            <div class="history-meta">
+                <span class="tag">{{ item.category }}</span>
+                <span class="history-date">{{ item.created_at|date:"d M, H:i" }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentHistoryId = null;
+    let currentOptimizedPrompt = '';
+
+    function toggleApiConfig() {
+        const body = document.getElementById('api-config-body');
+        const icon = document.getElementById('api-toggle-icon');
+        body.classList.toggle('open');
+        icon.textContent = body.classList.contains('open') ? '▲ Collapse' : '▼ Expand';
+    }
+
+    function clearInput() {
+        document.getElementById('raw-prompt').value = '';
+        document.getElementById('raw-prompt').focus();
+    }
+
+    async function optimizePrompt() {
+        const rawPrompt = document.getElementById('raw-prompt').value.trim();
+        if (!rawPrompt) {
+            alert('Please enter a prompt to optimize.');
+            return;
+        }
+
+        const btn = document.getElementById('optimize-btn');
+        const outputBox = document.getElementById('output-box');
+        const placeholder = document.getElementById('output-placeholder');
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Optimizing...';
+
+        outputBox.innerHTML = '<div class="loading-state"><div class="spinner"></div> Analyzing and optimizing your prompt...</div>';
+        document.getElementById('meta-section').style.display = 'none';
+        document.getElementById('response-action-bar').style.display = 'none';
+        document.getElementById('ai-response-section').style.display = 'none';
+        document.getElementById('copy-btn').style.display = 'none';
+
+        const apiKey = document.getElementById('api-key-input').value.trim();
+
+        try {
+            const response = await fetch('/api/optimize/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: rawPrompt, api_key: apiKey })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                outputBox.innerHTML = `<div style="color:var(--red); font-size:0.875rem;">❌ ${data.error}</div>`;
+            } else {
+                currentOptimizedPrompt = data.optimized_prompt;
+                currentHistoryId = data.history_id;
+
+                outputBox.textContent = data.optimized_prompt;
+
+                // Show improvements
+                const improvements = document.getElementById('improvements-list');
+                improvements.innerHTML = data.improvements.map(imp =>
+                    `<span class="improvement-chip">✓ ${imp}</span>`
+                ).join('');
+
+                const explanation = document.getElementById('explanation-box');
+                let explanationText = `💡 ${data.explanation}`;
+                if (data.api_note) {
+                    explanationText += `\n\n⚠ ${data.api_note}`;
+                }
+                explanation.textContent = explanationText;
+
+                document.getElementById('meta-section').style.display = 'block';
+                document.getElementById('category-tag').textContent = data.category;
+                document.getElementById('response-action-bar').style.display = 'flex';
+                document.getElementById('copy-btn').style.display = 'inline-block';
+            }
+        } catch (err) {
+            outputBox.innerHTML = `<div style="color:var(--red); font-size:0.875rem;">❌ Network error: ${err.message}</div>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '⚡ Optimize Prompt';
+        }
+    }
+
+    async function getAiResponse() {
+        if (!currentOptimizedPrompt) return;
+
+        const btn = document.getElementById('get-response-btn');
+        const section = document.getElementById('ai-response-section');
+        const content = document.getElementById('ai-response-content');
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Getting response...';
+
+        const apiKey = document.getElementById('api-key-input').value.trim();
+
+        if (!apiKey) {
+            section.style.display = 'block';
+            content.textContent = '⚠ Please enter your OpenAI API key in the configuration above to get AI responses.\n\nYour optimized prompt is ready — copy it and use it in ChatGPT or any AI tool!';
+            btn.disabled = false;
+            btn.innerHTML = '🤖 Get AI Response';
+            return;
+        }
+
+        section.style.display = 'block';
+        content.textContent = 'Sending optimized prompt to AI...';
+
+        try {
+            const response = await fetch('/api/get-response/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    optimized_prompt: currentOptimizedPrompt,
+                    history_id: currentHistoryId,
+                    api_key: apiKey
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                content.textContent = `❌ Error: ${data.error}`;
+            } else {
+                content.textContent = data.response;
+            }
+        } catch (err) {
+            content.textContent = `❌ Network error: ${err.message}`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🤖 Get AI Response';
+        }
+    }
+
+    function copyOptimized() {
+        navigator.clipboard.writeText(currentOptimizedPrompt).then(() => {
+            const btn = document.getElementById('copy-btn');
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => btn.textContent = '📋 Copy', 2000);
+        });
+    }
+
+    function copyResponse() {
+        const text = document.getElementById('ai-response-content').textContent;
+        navigator.clipboard.writeText(text).then(() => alert('Response copied!'));
+    }
+
+    // Keyboard shortcut
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            optimizePrompt();
+        }
+    });
+</script>
+{% endblock %}

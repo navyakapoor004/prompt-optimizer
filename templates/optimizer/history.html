@@ -1,0 +1,145 @@
+{% extends 'optimizer/base.html' %}
+{% block title %}History — PromptForge{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header { margin-bottom: 2rem; }
+    .page-title {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.5rem;
+    }
+    .page-title span { color: var(--accent); }
+    .page-sub { color: var(--muted); font-size: 0.875rem; }
+
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th {
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .history-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.875rem;
+        vertical-align: top;
+    }
+    .history-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .history-table tr:last-child td { border-bottom: none; }
+
+    .truncate {
+        max-width: 300px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .date-col { color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; }
+
+    .actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    .view-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        padding: 3px 8px;
+        border: 1px solid rgba(0,229,255,0.3);
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    .view-link:hover { background: rgba(0,229,255,0.1); }
+
+    .del-btn {
+        background: none;
+        border: 1px solid rgba(239,68,68,0.3);
+        color: var(--red);
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: var(--font-mono);
+        transition: all 0.2s;
+    }
+    .del-btn:hover { background: rgba(239,68,68,0.1); }
+
+    .empty-state {
+        text-align: center;
+        padding: 5rem 2rem;
+        color: var(--muted);
+    }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+    .empty-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="badge">OPTIMIZATION LOG</div>
+    <h1 class="page-title">Prompt <span>History</span></h1>
+    <p class="page-sub">All your optimized prompts stored locally.</p>
+</div>
+
+<div class="card">
+    {% if history %}
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Raw Prompt</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in history %}
+            <tr id="row-{{ item.pk }}">
+                <td style="color:var(--muted); font-family:var(--font-mono);">{{ item.pk }}</td>
+                <td><div class="truncate">{{ item.raw_prompt }}</div></td>
+                <td><span class="tag">{{ item.category }}</span></td>
+                <td class="date-col">{{ item.created_at|date:"d M Y, H:i" }}</td>
+                <td>
+                    <div class="actions">
+                        <a href="/history/{{ item.pk }}/" class="view-link">View →</a>
+                        <button class="del-btn" onclick="deleteItem({{ item.pk }})">✕ Delete</button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">No History Yet</div>
+        <p style="font-size:0.875rem; margin-bottom:1.5rem;">Start optimizing prompts to see them here.</p>
+        <a href="/" class="btn btn-primary">⚡ Optimize a Prompt</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function deleteItem(pk) {
+    if (!confirm('Delete this prompt from history?')) return;
+    try {
+        await fetch(`/api/history/${pk}/delete/`, { method: 'DELETE' });
+        const row = document.getElementById(`row-${pk}`);
+        row.style.opacity = '0';
+        row.style.transition = 'opacity 0.3s';
+        setTimeout(() => row.remove(), 300);
+    } catch (err) {
+        alert('Error deleting item.');
+    }
+}
+</script>
+{% endblock %}

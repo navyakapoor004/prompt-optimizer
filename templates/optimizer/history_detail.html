@@ -1,0 +1,171 @@
+{% extends 'optimizer/base.html' %}
+{% block title %}Prompt #{{ item.pk }} — PromptForge{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-family: var(--font-mono);
+        margin-bottom: 1.5rem;
+        transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .detail-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        font-size: 0.75rem;
+        color: var(--muted);
+        font-family: var(--font-mono);
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; } }
+
+    .detail-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .detail-card-header {
+        padding: 0.875rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .detail-card-body {
+        padding: 1.25rem;
+        font-size: 0.875rem;
+        line-height: 1.8;
+        white-space: pre-wrap;
+        font-family: var(--font-mono);
+        color: var(--text);
+        min-height: 150px;
+    }
+
+    .ai-response-section {
+        background: var(--surface);
+        border: 1px solid rgba(0,229,255,0.2);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .ai-header {
+        padding: 0.875rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+    }
+
+    .ai-body {
+        padding: 1.25rem;
+        font-size: 0.875rem;
+        line-height: 1.8;
+        white-space: pre-wrap;
+    }
+
+    .actions-footer {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="/history/" class="back-link">← Back to History</a>
+
+<div>
+    <h1 class="detail-title">Prompt #{{ item.pk }}</h1>
+    <div class="detail-meta">
+        <span class="tag">{{ item.category }}</span>
+        <span class="meta-item">📅 {{ item.created_at|date:"d M Y, H:i" }}</span>
+        {% if item.ai_response %}
+        <span class="meta-item" style="color: var(--green);">✓ AI Response Saved</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-card">
+        <div class="detail-card-header">
+            Raw Prompt
+            <button class="copy-btn" onclick="copyText('raw')">📋 Copy</button>
+        </div>
+        <div class="detail-card-body" id="raw-text">{{ item.raw_prompt }}</div>
+    </div>
+
+    <div class="detail-card">
+        <div class="detail-card-header" style="border-color: rgba(0,229,255,0.15);">
+            Optimized Prompt
+            <button class="copy-btn" onclick="copyText('optimized')">📋 Copy</button>
+        </div>
+        <div class="detail-card-body" id="optimized-text" style="color: #e2e8f0;">{{ item.optimized_prompt }}</div>
+    </div>
+</div>
+
+{% if item.ai_response %}
+<div class="ai-response-section">
+    <div class="ai-header">🤖 AI Response</div>
+    <div class="ai-body" id="ai-text">{{ item.ai_response }}</div>
+</div>
+{% endif %}
+
+<div class="actions-footer">
+    <a href="/" class="btn btn-primary">⚡ Optimize Another</a>
+    <button class="btn btn-danger" onclick="deleteAndRedirect({{ item.pk }})">✕ Delete</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyText(which) {
+    const el = document.getElementById(which === 'raw' ? 'raw-text' : 'optimized-text');
+    navigator.clipboard.writeText(el.textContent.trim()).then(() => alert('Copied!'));
+}
+
+async function deleteAndRedirect(pk) {
+    if (!confirm('Delete this prompt permanently?')) return;
+    await fetch(`/api/history/${pk}/delete/`, { method: 'DELETE' });
+    window.location.href = '/history/';
+}
+</script>
+{% endblock %}
