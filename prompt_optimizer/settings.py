@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-prompt-optimizer-secret-key-change-in-production'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -58,7 +58,7 @@ DATABASES = {
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
